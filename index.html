@@ -566,7 +566,7 @@ function renderGrid(){
       '<img class="face" src="'+IMG[d.id]+'" alt=""><img class="car" src="'+IMG[d.car]+'" alt=""><span class="nm">'+d.name+'</span>'+
       '<span class="fuel" style="color:'+(s.fuel==='ev'?'var(--ev)':'var(--petrol)')+'">'+(s.fuel==='ev'?ICON.bolt+' Electric':ICON.can+' Petrol')+'</span>';
     b.addEventListener('click',()=>pick(d.id)); b.addEventListener('mouseenter',()=>{ if(matchMedia('(hover:hover)').matches) renderPanel(d.id,true); });
-    b.addEventListener('mouseleave',()=>renderPanel(selId));
+    b.addEventListener('mouseleave',()=>{ if(matchMedia('(hover:hover)').matches) renderPanel(selId); });
     g.appendChild(b);
   });
   const r=document.createElement('button'); r.type='button'; r.className='card rand'; r.dataset.id='random';
