@@ -153,11 +153,31 @@ button:focus-visible{ outline:max(2px,.3cqw) solid #fff; outline-offset:max(2px,
   .selWrap{ flex-direction:column; } .overlay{ justify-content:flex-start; }
 }
 @media (prefers-reduced-motion:reduce){ .go:active{ transform:none; } .bossBanner{ animation:none; } }
+
+/* full screen mode */
+#app{ display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; }
+#fsBtn{ position:absolute; left:1.2cqw; top:1.2cqw; z-index:6; border:0; border-radius:99px;
+  background:rgba(10,30,26,.6); color:#fff; font:600 max(11px,1.3cqw) 'Outfit',sans-serif; padding:.5cqw 1.2cqw; cursor:pointer; }
+html.fs, html.fs body{ background:#06120f; padding:0; }
+html.fs #app{ position:fixed; left:0; top:0; width:var(--aw); height:var(--ah); background:#06120f;
+  box-sizing:border-box; padding:var(--pt,0) var(--pr,0) var(--pb,0) var(--pl,0); }
+html.fs.rotated #app{ transform-origin:0 0; transform:translateX(var(--ah0)) rotate(90deg); }
+html.fs #app{ flex-direction:row; gap:8px; }
+html.fs .stage{ order:1; flex:none; width:min(calc(var(--iw) - 2 * var(--side) - 16px), calc(var(--ih) * 16 / 9)) !important; }
+html.fs .controls{ display:contents; }
+html.fs .controls .grp{ flex-direction:column; justify-content:center; width:var(--side); height:var(--ih); gap:8px; padding:8px 0; box-sizing:border-box; }
+html.fs .controls .grp:first-child{ order:0; } html.fs .controls .grp:last-child{ order:2; }
+html.fs .controls button{ min-width:0; width:100%; flex:1; max-height:130px; padding:0; font-size:15px; }
+html.fs .controls button.gas{ min-width:0; flex:1.4; max-height:170px; }
+html.fs{ --side:84px; }
+html.fs .rot{ display:none !important; }
 </style>
 </head>
 <body>
+<div id="app">
 <main class="stage" id="stage">
   <canvas id="cv" aria-label="Charger Dash race"></canvas>
+  <button id="fsBtn" type="button">&#x26F6; Full screen</button>
   <button id="mute" type="button" aria-pressed="false">Sound on</button>
 
   <section class="overlay" id="title">
@@ -171,7 +191,7 @@ button:focus-visible{ outline:max(2px,.3cqw) solid #fff; outline-offset:max(2px,
     </div>
     <button class="go" id="playBtn" type="button">Play</button>
     <p class="hint">Hold &rarr; or D to drive, &larr; or A to brake, &uarr; &darr; to change lane, Space to boost, P to pause.<br>Electric cars grab lightning bolts. Petrol cars grab jerry cans.</p>
-    <p class="hint rot">Turn your phone sideways for the best view.</p>
+    <p class="hint rot">Tap Full screen (top left) for the best view.</p>
   </section>
 
   <section class="overlay" id="select" hidden>
@@ -197,6 +217,7 @@ button:focus-visible{ outline:max(2px,.3cqw) solid #fff; outline-offset:max(2px,
     <button type="button" data-hold="boost" class="boost" aria-label="Boost">Boost</button>
     <button type="button" data-hold="gas" class="gas" aria-label="Drive">Go</button>
   </div>
+</div>
 </div>
 
 <script>
@@ -1218,6 +1239,38 @@ window.__game={
   cheat:who=>{ const c=who==='me'?me:rv; c.x=FINISH-60; c.v=520; },
   finishSoon:()=>{ me.x=FINISH-200; me.v=500; keys.gas=true; }
 };
+})();
+</script>
+<script>
+(function(){
+  const root=document.documentElement, btn=document.getElementById('fsBtn');
+  const sa=k=>{ const d=document.createElement('div'); d.style.cssText='position:fixed;visibility:hidden;padding-top:env(safe-area-inset-'+k+',0px)'; document.body.appendChild(d); const v=parseFloat(getComputedStyle(d).paddingTop)||0; d.remove(); return v; };
+  function layout(){
+    if(!root.classList.contains('fs')) return;
+    const vw=innerWidth, vh=innerHeight;
+    const rot=vh>vw; root.classList.toggle('rotated',rot);
+    const aw=rot?vh:vw, ah=rot?vw:vh;
+    let t=sa('top'),r=sa('right'),b=sa('bottom'),l=sa('left');
+    if(rot){ [t,r,b,l]=[l,t,r,b]; }
+    const st=root.style;
+    st.setProperty('--aw',aw+'px'); st.setProperty('--ah',ah+'px'); st.setProperty('--ah0',vw+'px');
+    st.setProperty('--pt',t+'px'); st.setProperty('--pr',r+'px'); st.setProperty('--pb',b+'px'); st.setProperty('--pl',l+'px');
+    st.setProperty('--iw',(aw-l-r)+'px'); st.setProperty('--ih',(ah-t-b)+'px');
+    window.scrollTo(0,0);
+  }
+  function setFs(on){
+    root.classList.toggle('fs',on); if(!on) root.classList.remove('rotated');
+    btn.innerHTML=on?'&#x2715; Exit full screen':'&#x26F6; Full screen';
+    try{ localStorage.setItem('cdFs',on?'1':'0'); }catch(e){}
+    const el=document.documentElement, rq=el.requestFullscreen||el.webkitRequestFullscreen;
+    if(on && rq && !document.fullscreenElement && !document.webkitFullscreenElement){ try{ const p=rq.call(el); if(p&&p.catch) p.catch(()=>{}); }catch(e){} }
+    if(!on && (document.fullscreenElement||document.webkitFullscreenElement)){ try{ (document.exitFullscreen||document.webkitExitFullscreen).call(document); }catch(e){} }
+    layout(); setTimeout(layout,300);
+  }
+  btn.addEventListener('click',e=>{ e.stopPropagation(); setFs(!root.classList.contains('fs')); btn.blur(); });
+  addEventListener('resize',layout); addEventListener('orientationchange',()=>setTimeout(layout,300));
+  let saved=null; try{ saved=localStorage.getItem('cdFs'); }catch(e){}
+  if(saved==='1' || (saved===null && matchMedia('(pointer:coarse)').matches)) setFs(true);
 })();
 </script>
 </body>
